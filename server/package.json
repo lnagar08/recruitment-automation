@@ -14,13 +14,22 @@
   "author": "Lokesh Dhakad",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.994.0",
+    "axios": "^1.13.5",
     "body-parser": "^2.2.2",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "express-validator": "^7.3.1",
     "helmet": "^8.1.0",
+    "moment": "^2.30.1",
+    "multer": "^2.0.2",
+    "multer-s3": "^3.0.1",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^8.0.1",
     "pg": "^8.18.0",
     "pg-hstore": "^2.3.4",
-    "sequelize": "^6.37.7"
+    "sequelize": "^6.37.7",
+    "xlsx": "^0.18.5"
   }
 }

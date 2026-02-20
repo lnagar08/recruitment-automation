@@ -20,12 +20,23 @@ app.get('/', (req, res) => {
     res.send('Welcome to the Recruitment Automation System API');
 });
 
-// 3. Routes
-// app.use('/api/users', require('./routes/userRoutes'));
+// API Routes
+app.use('/api/agencies', require('./routes/agencyRoutes'));
+app.use('/api/candidates', require('./routes/candidateRoutes'));
+app.use('/api/documents', require('./routes/documentRoutes'));
+app.use('/api/interviews', require('./routes/interviewRoutes'));
 
+
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'OK', message: 'Server is healthy' });
+});
 
 app.use((err, req, res, next) => {
-    res.status(500).json({ message: err.message });
+    console.error(err.stack);
+    res.status(err.status || 500).json({
+        success: false,
+        message: err.message || 'Internal Server Error',
+    });
 });
 
 module.exports = app;

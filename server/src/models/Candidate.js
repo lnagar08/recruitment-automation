@@ -9,9 +9,10 @@ const Candidate = sequelize.define('Candidate', {
         allowNull: false,
         references: { model: 'agencies', key: 'id' }
     },
-    name: { type: DataTypes.STRING, allowNull: false },
-    phone: { type: DataTypes.STRING, allowNull: false },
+    name: { type: DataTypes.STRING, allowNull: false, unique: true },
+    phone: { type: DataTypes.STRING, allowNull: false, unique: true },
     email: { type: DataTypes.STRING, allowNull: false },
+    document_status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'pending' },
     reminder_count: { type: DataTypes.DECIMAL(11, 0), defaultValue: 0 }
 }, {
     tableName: 'candidates',
