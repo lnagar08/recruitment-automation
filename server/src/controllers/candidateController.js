@@ -11,7 +11,8 @@ exports.createCandidate = async (req, res) => {
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
     try {
-        const { agency_id, name, phone, email } = req.body;
+        const agency_id = req.agency_id;
+        const { name, phone, email } = req.body;
 
         // 1. Check if Candidate already exists (Email or Phone)
         const existingCandidate = await Candidate.findOne({
@@ -53,45 +54,7 @@ exports.createCandidate = async (req, res) => {
 exports.bulkUploadCandidates = async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ message: "Please upload an excel file" });
-        const { agency_id } = req.body;
-
-        const agency = await Agency.findByPk(agency_id);
-        if (!agency) return res.status(404).json({ message: "Agency not found" });
-
-        // Excel Reading
-        const workbook = xlsx.readFile(req.file.path);
-        const sheetName = workbook.SheetNames[0];
-        const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
-
-        const candidatesData = data.map(item => ({
-            agency_id,
-            name: item.Name,
-            phone: item.Phone?.toString(),
-            email: item.Email
-        }));
-
-        const result = await Candidate.bulkCreate(candidatesData, {
-            ignoreDuplicates: true,
-            validate: true
-        });
-        
-        if(result.length > 0){
-            const notifyPromises = result.map(candidate => sendNotification(candidate, agency, 'EMAIL'));
-            await Promise.all(notifyPromises);
-        }
-        // Delete the uploaded file after processing
-        fs.unlinkSync(req.file.path);
-
-        res.status(201).json({ success: true, message: `${result.length} Candidates imported` });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
-
-exports.bulkUploadCandidates = async (req, res) => {
-    try {
-        if (!req.file) return res.status(400).json({ message: "Please upload an excel file" });
-        const { agency_id } = req.body;
+        const agency_id = req.agency_id;
 
         const agency = await Agency.findByPk(agency_id);
         if (!agency) return res.status(404).json({ message: "Agency not found" });

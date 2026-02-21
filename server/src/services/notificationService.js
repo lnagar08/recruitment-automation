@@ -2,7 +2,7 @@ const nodemailer = require('nodemailer');
 const axios = require('axios');
 
 const sendNotification = async (candidate, agency, type = 'BOTH') => {
-    const uploadLink = `${process.env.FRONTEND_URL}/upload/${candidate.id}`;
+    const uploadLink = `${process.env.FRONTEND_URL}/upload/${candidate.uuid}`;
     const message = `Hello ${candidate.name}, please upload your documents here: ${uploadLink}`;
 
     // 1. SMTP Email Logic
@@ -63,4 +63,55 @@ const notifyAgency = async (candidate, agency) => {
     console.log(`📢 Agency notified about Candidate: ${candidate.id}`);
 };
 
-module.exports = { sendNotification, notifyAgency };
+const notifyAgencyInterviewFailure = async (interview, agency) => {
+    //const smtpConfig = JSON.parse(agency.smtp_config);
+    const smtpConfig = JSON.parse('{"host": "smtp.gmail.com", "port": 587, "user": "deepaktailor5921@gmail.com", "pass": "pryjokmkxwzzuugr"}');
+    const transporter = nodemailer.createTransport({
+        host: smtpConfig.host,
+        port: smtpConfig.port,
+        auth: { user: smtpConfig.user, pass: smtpConfig.pass },
+    });
+
+    const message = `🚨 Action Required: Interview Confirmation Failed for Candidate: ${interview.Candidate.name}. 
+    Company: ${interview.company_name}
+    Time: ${interview.interview_datetime}
+    The candidate did not confirm after 3 reminders. Please contact them directly at ${interview.Candidate.phone}.`;
+
+    await transporter.sendMail({
+        from: `"Interview System Alert" <${smtpConfig.user}>`,
+        to: agency.email,
+        subject: `⚠️ Unconfirmed Interview Alert - ${interview.Candidate.name}`,
+        text: message,
+    });
+    
+    console.log(`📢 Agency notified about Interview ID: ${interview.id}`);
+};
+
+const notifyRecruiterOnConfirmation = async (interview, candidate, agency) => {
+    //const smtpConfig = JSON.parse(agency.smtp_config);
+    const smtpConfig = JSON.parse('{"host": "smtp.gmail.com", "port": 587, "user": "deepaktailor5921@gmail.com", "pass": "pryjokmkxwzzuugr"}');
+    const transporter = nodemailer.createTransport({
+        host: smtpConfig.host,
+        port: smtpConfig.port,
+        auth: { user: smtpConfig.user, pass: smtpConfig.pass },
+    });
+
+    const message = `✅ Great News! Candidate ${candidate.name} has CONFIRMED the interview.
+    
+    Details:
+    - Company: ${interview.company_name}
+    - Time: ${interview.interview_datetime}
+    - Candidate Email: ${candidate.email}
+    - Candidate Phone: ${candidate.phone}`;
+
+    await transporter.sendMail({
+        from: `"Interview System" <${smtpConfig.user}>`,
+        to: agency.email, 
+        subject: `Confirmed: Interview with ${candidate.name}`,
+        text: message,
+    });
+    
+    console.log(`📩 Recruiter notified about confirmation: ${interview.id}`);
+};
+
+module.exports = { sendNotification, notifyAgency, notifyAgencyInterviewFailure, notifyRecruiterOnConfirmation };

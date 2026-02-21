@@ -1,15 +1,15 @@
 const cron = require('node-cron');
 const { Interview, Candidate, Agency } = require('../models');
 const { Op } = require('sequelize');
-const moment = require('moment'); // समय कैलकुलेशन के लिए 'npm install moment' करें
+const moment = require('moment');
 const { sendNotification } = require('../services/notificationService');
 
 const initInterviewReminders = () => {
-    // हर 15 मिनट में चेक करें
+    
     cron.schedule('*/15 * * * *', async () => {
         console.log('🕒 Checking for upcoming interviews (1-hour reminder)...');
 
-        // वर्तमान समय से 1 घंटा बाद का समय
+        
         const targetTimeStart = moment().add(55, 'minutes').toISOString();
         const targetTimeEnd = moment().add(65, 'minutes').toISOString();
 

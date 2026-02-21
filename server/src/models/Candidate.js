@@ -13,7 +13,16 @@ const Candidate = sequelize.define('Candidate', {
     phone: { type: DataTypes.STRING, allowNull: false, unique: true },
     email: { type: DataTypes.STRING, allowNull: false },
     document_status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'pending' },
-    reminder_count: { type: DataTypes.DECIMAL(11, 0), defaultValue: 0 }
+    reminder_count: { type: DataTypes.DECIMAL(11, 0), defaultValue: 0 },
+    rejection_remark: {
+        type: DataTypes.TEXT,
+        allowNull: true
+    },
+    uuid: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        unique: true
+    }
 }, {
     tableName: 'candidates',
     timestamps: true,

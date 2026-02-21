@@ -8,7 +8,12 @@ const Interview = sequelize.define('Interview', {
     company_name: { type: DataTypes.STRING },
     interview_datetime: { type: DataTypes.STRING },
     confirmation_status: { type: DataTypes.STRING},
-    reminder_count: { type: DataTypes.DECIMAL(11, 0), defaultValue: 0 }
+    reminder_count: { type: DataTypes.DECIMAL(11, 0), defaultValue: 0 },
+    uuid: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        unique: true
+    }
 }, {
     tableName: 'interviews',
     timestamps: true,
