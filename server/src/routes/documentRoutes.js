@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const upload = require('../config/s3');
+//const upload = require('../config/s3');
+const upload = require('../config/storage');
 const documentController = require('../controllers/documentController');
 const auth = require('../middlewares/authMiddleware');
 

@@ -6,7 +6,7 @@ const { sendNotification } = require('../services/notificationService');
 
 const initInterviewReminders = () => {
     
-    cron.schedule('*/15 * * * *', async () => {
+    cron.schedule('*/05 * * * *', async () => {
         console.log('🕒 Checking for upcoming interviews (1-hour reminder)...');
 
         
@@ -14,19 +14,23 @@ const initInterviewReminders = () => {
         const targetTimeEnd = moment().add(65, 'minutes').toISOString();
 
         const upcoming = await Interview.findAll({
-            where: {
-                confirmation_status: 'confirmed',
-                interview_datetime: {
-                    [Op.between]: [targetTimeStart, targetTimeEnd]
-                }
-            },
+            where: { confirmation_status: 'confirmed' },
             include: [Candidate, Agency]
         });
 
+        const now = moment();
+
         for (const interview of upcoming) {
-            const msg = `Reminder: Your interview with ${interview.company_name} is in 1 hour!`;
-            await sendNotification(interview.Candidate, interview.Agency, 'BOTH', msg);
-            console.log(`⏰ 1-hour reminder sent to ${interview.Candidate.name}`);
+            const interviewTime = moment(interview.interview_datetime, "DD/M/YYYY hh:mm A");
+
+            const diffInMinutes = interviewTime.diff(now, 'minutes');
+
+            if (diffInMinutes >= 55 && diffInMinutes <= 65) {
+                const msg = `Reminder: Your interview with ${interview.company_name} is at ${interview.interview_datetime} (in 1 hour).`;
+                
+                await sendNotification(interview.Candidate, interview.Agency, 'EMAIL', msg, `Upcoming Interview Reminder: ${interview.company_name} at ${interview.interview_datetime}`);
+                console.log(`✅ 1-hour reminder sent to ${interview.Candidate.name}`);
+            }
         }
     });
 };

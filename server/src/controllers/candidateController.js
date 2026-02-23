@@ -1,7 +1,6 @@
 const { Op } = require('sequelize');
 const { Candidate, Agency } = require('../models');
 const { validationResult } = require('express-validator');
-const { sendNotification } = require('../services/notificationService');
 const xlsx = require('xlsx');
 const fs = require('fs');
 
@@ -34,11 +33,6 @@ exports.createCandidate = async (req, res) => {
         const candidate = await Candidate.create({
             agency_id, name, phone, email
         });
-
-        // --- Send Notification ---
-        //if (agency.smtp_config || agency.whatsapp_config) {
-            await sendNotification(candidate, agency, 'EMAIL');
-        //}
 
         res.status(201).json({ 
             success: true, 
@@ -110,10 +104,6 @@ exports.bulkUploadCandidates = async (req, res) => {
             result = await Candidate.bulkCreate(finalData);
         }
 
-        if (result.length > 0) {
-            const notifyPromises = result.map(candidate => sendNotification(candidate, agency, 'EMAIL'));
-            await Promise.all(notifyPromises);
-        }
         fs.unlinkSync(req.file.path);
 
         res.status(201).json({

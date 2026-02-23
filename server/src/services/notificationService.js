@@ -1,10 +1,9 @@
 const nodemailer = require('nodemailer');
 const axios = require('axios');
+const { User } = require('../models');
 
-const sendNotification = async (candidate, agency, type = 'BOTH') => {
-    const uploadLink = `${process.env.FRONTEND_URL}/upload/${candidate.uuid}`;
-    const message = `Hello ${candidate.name}, please upload your documents here: ${uploadLink}`;
-
+const sendNotification = async (candidate, agency, type = 'BOTH', message, subject) => {
+    
     // 1. SMTP Email Logic
     if (type === 'EMAIL' || type === 'BOTH') {
         //const smtpConfig = JSON.parse(agency.smtp_config); 
@@ -23,7 +22,7 @@ const sendNotification = async (candidate, agency, type = 'BOTH') => {
             const info = await transporter.sendMail({
                 from: `"Recruiter" <${smtpConfig.user}>`,
                 to: candidate.email,
-                subject: 'Document Upload Request',
+                subject: subject,
                 text: message,
             });
             console.log("✅ Email sent: ", info.messageId);
@@ -88,6 +87,7 @@ const notifyAgencyInterviewFailure = async (interview, agency) => {
 };
 
 const notifyRecruiterOnConfirmation = async (interview, candidate, agency) => {
+    
     //const smtpConfig = JSON.parse(agency.smtp_config);
     const smtpConfig = JSON.parse('{"host": "smtp.gmail.com", "port": 587, "user": "deepaktailor5921@gmail.com", "pass": "pryjokmkxwzzuugr"}');
     const transporter = nodemailer.createTransport({
@@ -104,14 +104,53 @@ const notifyRecruiterOnConfirmation = async (interview, candidate, agency) => {
     - Candidate Email: ${candidate.email}
     - Candidate Phone: ${candidate.phone}`;
 
+    const agencyUsers = await User.findAll({ 
+        attributes: ['email'],
+        where: { agency_id: agency.id }
+    });
+    
     await transporter.sendMail({
         from: `"Interview System" <${smtpConfig.user}>`,
-        to: agency.email, 
+        to: agencyUsers[0].email,
         subject: `Confirmed: Interview with ${candidate.name}`,
         text: message,
     });
     
     console.log(`📩 Recruiter notified about confirmation: ${interview.id}`);
 };
+
+exports.notifyRecruiterOnReschedule = async (interview, agency) => {
+    //const smtpConfig = JSON.parse(agency.smtp_config);
+    const smtpConfig = JSON.parse('{"host": "smtp.gmail.com", "port": 587, "user": "deepaktailor5921@gmail.com", "pass": "pryjokmkxwzzuugr"}');
+    const transporter = nodemailer.createTransport({
+        host: smtpConfig.host,
+        port: smtpConfig.port,
+        auth: { user: smtpConfig.user, pass: smtpConfig.pass },
+    });
+
+    const agencyUsers = await User.findAll({ 
+        attributes: ['email'],
+        where: { agency_id: agency.id }
+    });
+    
+    const adminEmail = agencyUsers[0]?.email;
+
+    const message = `🔄 Interview Rescheduled successfully.
+    
+    Details:
+    - Candidate: ${interview.Candidate.name}
+    - New Time: ${interview.interview_datetime}
+    - Status: Pending Confirmation
+    
+    The system will start reminder cycles for this new slot.`;
+
+    await transporter.sendMail({
+        from: `"Interview System" <${smtpConfig.user}>`,
+        to: adminEmail,
+        subject: `Rescheduled: Interview with ${interview.Candidate.name}`,
+        text: message,
+    });
+};
+
 
 module.exports = { sendNotification, notifyAgency, notifyAgencyInterviewFailure, notifyRecruiterOnConfirmation };

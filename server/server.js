@@ -10,10 +10,8 @@ const startServer = async () => {
     try {
        
         await sequelize.authenticate();
-        console.log('✅ PostgreSQL Connected via Sequelize.');
-
         await sequelize.sync({ alter: true });
-        console.log('📂 Database Tables Synced.');
+        console.log('✅ Database Connected & Synced');
 
         // Initialize Cron Jobs
         initSchedulers();

@@ -25,7 +25,6 @@ router.post(
     agencyController.registerAgency
 );
 
-router.get('/', agencyController.getAllAgencies);
 router.post('/login', 
     [
         body('email')

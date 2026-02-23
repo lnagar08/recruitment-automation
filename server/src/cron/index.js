@@ -1,6 +1,7 @@
 const cron = require('node-cron');
 const { processReminders } = require('../services/reminderService');
 const { processInterviewReminders } = require('../services/reminderService');
+const initInterviewReminders = require('./interviewCron');
 
 const initSchedulers = () => {
     // Each day at 10:00 AM ('0 10 * * *') (server time) - Adjust as needed for timezone
@@ -16,6 +17,8 @@ const initSchedulers = () => {
         console.log('⏰ Starting Interview Confirmation Reminders...');
         processInterviewReminders();
     });
+
+    initInterviewReminders(); // Interview reminders before 1 hour
 
     console.log('✅ Cron Jobs Initialized');
 };

@@ -6,7 +6,7 @@ const bodyParser = require('body-parser');
 const app = express();
 
 const corsOptions = {
-    origin: 'http://localhost:3000',
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     optionsSuccessStatus: 200
 };
 
@@ -14,6 +14,7 @@ app.use(helmet());
 app.use(cors(corsOptions)); 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use('/uploads', express.static('uploads'));
 
 // 2. Sample Route (
 app.get('/', (req, res) => {

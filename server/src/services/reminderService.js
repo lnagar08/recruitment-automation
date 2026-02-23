@@ -18,7 +18,12 @@ const processReminders = async () => {
             const agency = candidate.Agency;
             
             if (candidate.reminder_count < 3) {
-                await sendNotification(candidate, agency, 'EMAIL');
+
+                const uploadLink = `${process.env.FRONTEND_URL}/document/upload/${candidate.uuid}`;
+                const subject = `Welcome ${candidate.name}! Please Upload Your Documents`;
+                const message = `Hello ${candidate.name}, welcome to our recruitment process! Please upload your documents here: ${uploadLink}`;
+    
+                await sendNotification(candidate, agency, 'EMAIL', message, subject);
                 await candidate.increment('reminder_count');
             } 
             else if (candidate.reminder_count === 3) {

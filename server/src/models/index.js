@@ -19,10 +19,10 @@ Agency.hasMany(Interview, { foreignKey: 'agency_id', as: 'interviews' });
 Interview.belongsTo(Agency, { foreignKey: 'agency_id' });
 
 // 2. Candidate Relationships
-Candidate.hasMany(Document, { foreignKey: 'candidate_id', as: 'documents' });
+Candidate.hasMany(Document, { foreignKey: 'candidate_id', as: 'documents', onDelete: 'CASCADE' });
 Document.belongsTo(Candidate, { foreignKey: 'candidate_id' });
 
-Candidate.hasMany(Interview, { foreignKey: 'candidate_id', as: 'interviews' });
+Candidate.hasMany(Interview, { foreignKey: 'candidate_id', as: 'interviews', onDelete: 'CASCADE' });
 Interview.belongsTo(Candidate, { foreignKey: 'candidate_id' });
 
 // --- Export ---

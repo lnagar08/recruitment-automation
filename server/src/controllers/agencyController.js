@@ -47,17 +47,6 @@ exports.registerAgency = async (req, res) => {
     }
 };
 
-
-// Get All Agencies
-exports.getAllAgencies = async (req, res) => {
-    try {
-        const agencies = await Agency.findAll();
-        res.status(200).json({ success: true, data: agencies });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-};
-
 exports.login = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
