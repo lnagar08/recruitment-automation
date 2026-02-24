@@ -1,5 +1,5 @@
-const { Interview, Candidate, Agency, User } = require('../models');
-const { sendNotification, notifyRecruiterOnConfirmation } = require('../services/notificationService');
+const { Interview, Candidate, Agency, User, Log } = require('../models');
+const { sendNotification, notifyRecruiterOnConfirmation, notifyRecruiterOnReschedule } = require('../services/notificationService');
 
 exports.scheduleInterview = async (req, res) => {
     try {
@@ -22,6 +22,14 @@ exports.scheduleInterview = async (req, res) => {
         const message = `Hi ${candidate.name}, your interview with ${company_name} is scheduled for ${interview_datetime}. Please confirm here: ${confirmLink}`;
 
         await sendNotification(candidate, agency, 'EMAIL', message, subject);
+
+        await Log.create({
+            type: 'INTERVIEW_SCHEDULE',
+            candidate_id: candidate.id,
+            agency_id: candidate.agency_id,
+            status: 'SUCCESS',
+            message: `Interview scheduled for ${candidate.name} with company ${company_name}`
+        });
 
         res.status(201).json({
             success: true,
@@ -54,6 +62,14 @@ exports.confirmInterview = async (req, res) => {
 
         await notifyRecruiterOnConfirmation(interview, interview.Candidate, interview.Agency, 'EMAIL');
         
+        await Log.create({
+            type: 'INTERVIEW_CONFIRMATION',
+            candidate_id: interview.Candidate.id,
+            agency_id: interview.Candidate.agency_id,
+            status: 'SUCCESS',
+            message: `Interview confirmed for candidate ${interview.Candidate.name} with company ${interview.company_name}`
+        });
+
         res.status(200).json({ success: true, message: "Interview confirmed successfully!" });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -79,6 +95,14 @@ exports.updateSchedule = async (req, res) => {
         });
     
         await notifyRecruiterOnReschedule(interview, interview.Agency);
+
+        await Log.create({
+            type: 'INTERVIEW_RESCHEDULE',
+            candidate_id: interview.Candidate.id,
+            agency_id: interview.Candidate.agency_id,
+            status: 'SUCCESS',
+            message: `Interview timing change in candidate ${interview.Candidate.name} to ${new_datetime}`
+        });
 
         res.status(200).json({
             success: true,
@@ -109,6 +133,13 @@ exports.rescheduleInterview = async (req, res) => {
         
         await sendNotification(interview.Candidate, interview.Agency, 'EMAIL', message, subject);
 
+        await Log.create({
+            type: 'INTERVIEW_RESCHEDULE',
+            candidate_id: interview.Candidate.id,
+            agency_id: interview.Candidate.agency_id,
+            status: 'SUCCESS',
+            message: `Interview rescheduled for ${interview.Candidate.name} to ${new_datetime}`
+        });
 
         res.status(200).json(
             { 

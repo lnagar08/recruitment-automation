@@ -9,5 +9,6 @@ router.post('/upload/:candidate_id', upload.single('file'), documentController.u
 
 router.post('/reject/:candidate_id', auth, documentController.rejectDocument);
 router.post('/approve/:candidate_id', auth, documentController.approveDocument);
+router.post('/resend-link/:candidate_id', auth, documentController.resendDocumentUploadLink);
 
 module.exports = router;

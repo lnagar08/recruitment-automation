@@ -5,6 +5,7 @@ const User = require('./User');
 const Candidate = require('./Candidate');
 const Document = require('./Document');
 const Interview = require('./Interview');
+const Log = require('./Log');
 
 // --- Relationships (Associations) ---
 
@@ -32,5 +33,6 @@ module.exports = {
     User,
     Candidate,
     Document,
-    Interview
+    Interview,
+    Log
 };

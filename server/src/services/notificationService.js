@@ -33,13 +33,37 @@ const sendNotification = async (candidate, agency, type = 'BOTH', message, subje
 
     // 2. WhatsApp API Logic (Example using a generic API)
     if (type === 'WHATSAPP' || type === 'BOTH') {
-        const waConfig = JSON.parse(agency.whatsapp_config);
+        /*const waConfig = JSON.parse(agency.whatsapp_config);
         
         await axios.post(waConfig.apiUrl, {
             phoneNumber: candidate.phone,
             message: message,
             apiKey: waConfig.apiKey
-        });
+        });*/
+
+        const accessToken = process.env.WHATSAPP_TOKEN; 
+        const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID; 
+        const apiUrl = `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`; // Check Meta for the latest API version
+
+        try {
+            const response = await axios.post(apiUrl, {
+                messaging_product: 'whatsapp',
+                to: candidate.phone, // Recipient's number in international format (e.g., +1234567890)
+                type: 'text',
+                text: {
+                    preview_url: false,
+                    body: message
+                }
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            console.log('Message sent successfully:', response.data);
+        } catch (error) {
+            console.error('Error sending message:', error.response ? error.response.data : error.message);
+        }
     }
 };
 
@@ -51,16 +75,36 @@ const notifyAgency = async (candidate, agency) => {
         port: smtpConfig.port,
         auth: { user: smtpConfig.user, pass: smtpConfig.pass },
     });
-
+    //
+    const agencyUser = await User.findOne({ attributes: ['email'], where: { agency_id: agency.id } });
+    
     await transporter.sendMail({
         from: `"System Alert" <${smtpConfig.user}>`,
-        to: agency.email || smtpConfig.user, 
-        subject: `🚨 Action Required: Candidate Pending - ${candidate.name}`,
+        to: agencyUser.email, 
+        subject: `🚨 Action Required: Candidate document Pending - ${candidate.name}`,
         text: `Candidate ${candidate.name} (Phone: ${candidate.phone}) has not uploaded documents after 3 reminders. Please contact them directly.`,
     });
     
-    console.log(`📢 Agency notified about Candidate: ${candidate.id}`);
+    
 };
+
+const notifyAgencyDocumentUploaded = async (candidate, agency) => {
+    //const smtpConfig = JSON.parse(agency.smtp_config);
+    const smtpConfig = JSON.parse('{"host": "smtp.gmail.com", "port": 587, "user": "deepaktailor5921@gmail.com", "pass": "pryjokmkxwzzuugr"}');
+    const transporter = nodemailer.createTransport({
+        host: smtpConfig.host,
+        port: smtpConfig.port,
+        auth: { user: smtpConfig.user, pass: smtpConfig.pass },
+    });
+
+    const agencyUser = await User.findOne({ attributes: ['email'], where: { agency_id: agency.id } });
+    await transporter.sendMail({
+        from: `"System Alert" <${smtpConfig.user}>`,
+        to: agencyUser.email, 
+        subject: `✅ Document Uploaded - ${candidate.name}`,
+        text: `Candidate ${candidate.name} has uploaded their documents.`,
+    });
+}
 
 const notifyAgencyInterviewFailure = async (interview, agency) => {
     //const smtpConfig = JSON.parse(agency.smtp_config);
@@ -75,10 +119,10 @@ const notifyAgencyInterviewFailure = async (interview, agency) => {
     Company: ${interview.company_name}
     Time: ${interview.interview_datetime}
     The candidate did not confirm after 3 reminders. Please contact them directly at ${interview.Candidate.phone}.`;
-
+    const agencyUser = await User.findOne({ attributes: ['email'], where: { agency_id: agency.id } });
     await transporter.sendMail({
         from: `"Interview System Alert" <${smtpConfig.user}>`,
-        to: agency.email,
+        to: agencyUser.email,
         subject: `⚠️ Unconfirmed Interview Alert - ${interview.Candidate.name}`,
         text: message,
     });
@@ -119,7 +163,7 @@ const notifyRecruiterOnConfirmation = async (interview, candidate, agency) => {
     console.log(`📩 Recruiter notified about confirmation: ${interview.id}`);
 };
 
-exports.notifyRecruiterOnReschedule = async (interview, agency) => {
+const  notifyRecruiterOnReschedule = async (interview, agency) => {
     //const smtpConfig = JSON.parse(agency.smtp_config);
     const smtpConfig = JSON.parse('{"host": "smtp.gmail.com", "port": 587, "user": "deepaktailor5921@gmail.com", "pass": "pryjokmkxwzzuugr"}');
     const transporter = nodemailer.createTransport({
@@ -153,4 +197,11 @@ exports.notifyRecruiterOnReschedule = async (interview, agency) => {
 };
 
 
-module.exports = { sendNotification, notifyAgency, notifyAgencyInterviewFailure, notifyRecruiterOnConfirmation };
+module.exports = { 
+    sendNotification, 
+    notifyAgency, 
+    notifyAgencyInterviewFailure, 
+    notifyRecruiterOnConfirmation, 
+    notifyRecruiterOnReschedule, 
+    notifyAgencyDocumentUploaded 
+};

@@ -1,5 +1,5 @@
-const { Document, Candidate, Agency } = require('../models');
-const { sendNotification } = require('../services/notificationService');
+const { Document, Candidate, Agency, Log } = require('../models');
+const { sendNotification, notifyAgencyDocumentUploaded } = require('../services/notificationService');
 const fs = require('fs');
 const path = require('path');
 
@@ -27,11 +27,56 @@ exports.uploadDocument = async (req, res) => {
             { where: { id: candidate.id } }
         );
 
+        await notifyAgencyDocumentUploaded(candidate, await Agency.findByPk(candidate.agency_id));
+
+        await Log.create({
+            type: 'DOCUMENT_UPLOAD',
+            candidate_id: candidate.id,
+            agency_id: candidate.agency_id,
+            status: 'SUCCESS',
+            message: `Document uploaded for candidate ${candidate.name}`
+        });
+
         res.status(201).json({
             success: true,
             message: "Document uploaded successfully",
             data: newDoc
         });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.resendDocumentUploadLink = async (req, res) => {
+    try {
+        const candidate_id = req.params.candidate_id;
+        const candidate = await Candidate.findByPk(candidate_id, {
+            include: [
+                { model: Document, as: 'documents' }, 
+                { model: Agency }
+            ]
+        });
+        if (!candidate) {
+            return res.status(404).json({ message: "Invalid Link" });
+        }
+        
+        const uploadLink = `${process.env.FRONTEND_URL}/document/upload/${candidate.uuid}`;
+        const subject = `Welcome ${candidate.name}! Please Upload Your Documents`;
+        const message = `Hello ${candidate.name}, welcome to our recruitment process! Please upload your documents here: ${uploadLink}`;
+
+        await sendNotification(candidate, candidate.Agency, 'EMAIL', message, subject);
+        
+        await Log.create({
+            type: 'DOCUMENT_REMINDER',
+            candidate_id: candidate.id,
+            agency_id: candidate.agency_id,
+            status: 'SUCCESS',
+            message: `Reminder ${candidate.reminder_count + 1} sent to ${candidate.email}`
+        });
+
+        await candidate.update({ reminder_count: 1, document_status: 'pending' });
+        
+        res.status(200).json({ success: true, message: "Document upload link resent." });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -73,7 +118,13 @@ exports.rejectDocument = async (req, res) => {
         const message = `Hello ${candidate.name}, unfortunately your uploaded documents were rejected. Reason: ${remark}. will send again upload link shortly.`;
         
         await sendNotification(candidate, candidate.Agency, 'EMAIL', message, subject);
-
+        await Log.create({
+            type: 'DOCUMENT_REMINDER',
+            candidate_id: candidate.id,
+            agency_id: candidate.agency_id,
+            status: 'SUCCESS',
+            message: `Document rejected and reminder sent to ${candidate.email} with remark: ${remark}`
+        });
         res.status(200).json({
             success: true,
             message: "Document rejected and candidate notified to re-upload."
@@ -87,6 +138,10 @@ exports.rejectDocument = async (req, res) => {
 exports.approveDocument = async (req, res) => {
     try {
         const { candidate_id } = req.params;
+
+        const candidate = await Candidate.findByPk(candidate_id, { include: [Agency] });
+        if (!candidate) return res.status(404).json({ message: "Candidate not found" });
+
         await Candidate.update(
             { document_status: 'approved', rejection_remark: null },
             { where: { id: candidate_id } }
@@ -95,8 +150,16 @@ exports.approveDocument = async (req, res) => {
         const subject = `Document Approval!`;
         const message = `Hello ${candidate.name}, your uploaded documents have been approved. Thank you! we will schedule interview soon.`;
         
-        const candidate = await Candidate.findByPk(candidate_id, { include: [Agency] });
+        
         await sendNotification(candidate, candidate.Agency, 'EMAIL', message, subject);
+        
+        await Log.create({
+            type: 'DOCUMENT_REMINDER',
+            candidate_id: candidate.id,
+            agency_id: candidate.agency_id,
+            status: 'SUCCESS',
+            message: `Document approved and notification sent to ${candidate.email}`
+        });
 
         res.status(200).json({ success: true, message: "Document approved." });
     } catch (error) {
